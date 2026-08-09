@@ -2,6 +2,13 @@ config:
   settings:
     title: My Homelab
     theme: dark
+    layout:
+      Docs:
+        style: row
+        columns: 3
+      Git:
+        style: row
+        columns: 2
 
   services:
     - Monitoring:
@@ -20,21 +27,50 @@ config:
   bookmarks:
     - Docs:
         - Kubernetes:
-            - abbr: K8S
-              href: https://kubernetes.io/docs/home/
+            - href: https://kubernetes.io/docs/home/
+              icon: kubernetes.png
+        - Helm:
+            - href: https://helm.sh/docs/
+              icon: helm.png
+        - K3s:
+            - href: https://docs.k3s.io/
+              icon: k3s.png
         - Arch:
-            - abbr: Arch
-              href: https://wiki.archlinux.org/title/Main_page
-    - Accounts:
+            - href: https://wiki.archlinux.org/title/Main_page
+              icon: arch-linux.png
+        - Hyprland:
+            - href: https://wiki.hypr.land/
+              icon: hyprland.png
+        - Quickshell:
+            - abbr: QS
+              href: https://quickshell.org/
+    - Git:
         - GitHub:
-            - abbr: GitHub
+            - description: brianemm99
               href: https://github.com/brianemm99
+              icon: github-light.png
+        - Codeberg:
+            - description: brianemm99
+              href: https://codeberg.org/brianemm99
+              icon: codeberg.png
 
   widgets:
+    - search:
+        provider: brave
+        focus: true # Optional, will set focus to the search bar on page load
+        showSearchSuggestions: true # Optional, will show search suggestions. Defaults to false
+        target: _blank # One of _self, _blank, _parent or _top
     - resources:
         cpu: true
+        cputemp: true
         memory: true
+    - datetime:
+        text_size: 2xl
+        format:
+          timeStyle: short
+          hourCycle: h23
 
 env:
   - name: HOMEPAGE_ALLOWED_HOSTS
     value: 172.18.0.2:3001
+
