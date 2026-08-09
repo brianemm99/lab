@@ -6,9 +6,6 @@ config:
       Docs:
         style: row
         columns: 3
-      Git:
-        style: row
-        columns: 2
 
   services:
     - Monitoring:
@@ -23,6 +20,16 @@ config:
             description: Recipe manager
             icon: mealie.png
             namespace: mealie
+    - Git:
+        - GitHub:
+            - description: brianemm99
+              href: https://github.com/brianemm99
+              icon: github-light.png
+        - Codeberg:
+            - description: brianemm99
+              href: https://codeberg.org/brianemm99
+              icon: codeberg.png
+
 
   bookmarks:
     - Docs:
@@ -44,15 +51,6 @@ config:
         - Quickshell:
             - abbr: QS
               href: https://quickshell.org/
-    - Git:
-        - GitHub:
-            - description: brianemm99
-              href: https://github.com/brianemm99
-              icon: github-light.png
-        - Codeberg:
-            - description: brianemm99
-              href: https://codeberg.org/brianemm99
-              icon: codeberg.png
 
   widgets:
     - search:
