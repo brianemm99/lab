@@ -3,7 +3,10 @@ config:
     title: My Homelab
     theme: dark
     layout:
-      Docs:
+      Kubernetes:
+        style: row
+        columns: 2
+      OS:
         style: row
         columns: 3
 
@@ -32,7 +35,7 @@ config:
 
 
   bookmarks:
-    - Docs:
+    - Kubernetes:
         - Kubernetes:
             - href: https://kubernetes.io/docs/home/
               icon: kubernetes.png
@@ -42,6 +45,10 @@ config:
         - K3s:
             - href: https://docs.k3s.io/
               icon: k3s.png
+        - Flux:
+            - href: https://fluxcd.io/flux/
+              icon: flux.png
+    - OS:
         - Arch:
             - href: https://wiki.archlinux.org/title/Main_page
               icon: arch-linux.png
