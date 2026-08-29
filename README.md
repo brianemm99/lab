@@ -9,6 +9,7 @@
 - dev container testing
 - bash scripts
     - setup scripts
+- Pi-hole setup
 
 *More Projects Incoming...*
 
