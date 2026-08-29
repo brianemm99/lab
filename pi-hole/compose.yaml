@@ -1,0 +1,15 @@
+services:
+  pihole:
+    container_name: pihole
+    image: "pihole/pihole:2026.07.2"
+    network_mode: host
+    environment:
+      TZ: 'America/New_York'
+      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
+      FTLCONF_dns_listeningMode: 'all'
+    volumes:
+      - './etc-pihole:/etc/pihole'
+    cap_add:
+      - SYS_NICE
+      # - NET_ADMIN     # uncomment only if Pi-hole runs DHCP (Stage 5, alt path)
+    restart: unless-stopped
