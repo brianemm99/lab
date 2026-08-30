@@ -1,5 +1,10 @@
 Installation Guide -- Pi-hole -- TP-Link(Deco) -- Tailscale
 
+- Hardware
+    - Raspberry Pi 5 1GB
+- OS
+    - Raspberry Pi OS Lite (64-bit)
+
 **Description:**
 Network-wide ad blocking for every device on the local network, plus DNS filtering
 on the tailnet from anywhere.
