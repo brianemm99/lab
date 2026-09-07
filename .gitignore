@@ -34,4 +34,48 @@ Sessionx.vim
 .netrwhist
 tags
 
+# don't ignore templates
+!.env.example
+!*.env.example
 
+# python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# node
+node_modules/
+dist/
+.next/
+
+# rust / go
+target/
+vendor/
+
+# mise / direnv
+mise.local.toml
+.mise.local.toml
+.envrc
+.direnv/
+
+# editor & AI tool state
+.claude/
+.cursor/
+.idea/
+.vscode/settings.json
+
+# agent harness local state
+.pi/
+.hermes/
+
+# os
+.DS_Store
+
+# scratch
+tmp/
+scratch/
+*.log
