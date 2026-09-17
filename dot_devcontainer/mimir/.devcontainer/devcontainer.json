@@ -1,0 +1,14 @@
+{
+  "name": "mimir",
+  "remoteUser": "dev",
+  "build": { "dockerfile": "Dockerfile" },
+  "runArgs": [
+    "--device=/dev/dri",
+    "--device=/dev/kfd",
+    "--group-add=video",
+    "--group-add=987"
+  ],
+  "mounts": [
+    "source=/home/iris/ai-models,target=/models,type=bind"
+  ]
+}

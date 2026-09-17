@@ -1,0 +1,11 @@
+# Personal data, never commit
+audio/
+transcripts/
+notes/
+
+# Models
+*.bin
+*.gguf
+
+# Environment
+.venv/
