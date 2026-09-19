@@ -1,0 +1,10 @@
+requests==2.32.3
+qdrant-client==1.13.0
+PyPDF2==3.0.1
+numpy==2.2.2
+fastapi==0.115.6
+langchain-text-splitters==0.3.5
+uvicorn==0.34.0
+python-multipart==0.0.20
+aiohttp==3.11.11
+tiktoken==0.8.0

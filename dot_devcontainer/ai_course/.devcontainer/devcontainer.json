@@ -9,5 +9,8 @@
   "mounts": [
     "source=aicourse-dind,target=/var/lib/docker,type=volume"
   ],
+  "appPort": [
+    "8000:80", "9000:9000", "6333:6333"
+  ],
   "postCreateCommand": "scripts/setup"
 }

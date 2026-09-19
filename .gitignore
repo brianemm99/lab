@@ -71,6 +71,7 @@ mise.local.toml
 # agent harness local state
 .pi/
 .hermes/
+models/
 
 # os
 .DS_Store

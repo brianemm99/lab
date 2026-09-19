@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF QA System</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pdf-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 500px;
+            overflow-y: auto;
+        }
+
+        .upload-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 10px;
+            max-width: 80%;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+
+        .assistant-message {
+            background: #e9ecef;
+            color: black;
+            margin-right: auto;
+        }
+
+        .message-content {
+            margin-bottom: 5px;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        input, button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input {
+            flex: 1;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 20px;
+        }
+
+        button:disabled {
+            background: #ccc;
+        }
+
+        .typing-indicator {
+            display: none;
+            color: #666;
+            font-style: italic;
+            margin: 10px 0;
+        }
+
+        .source {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .source-chunks {
+            text-decoration: underline dotted;
+        }
+
+        .source-context {
+            display: none;
+            position: relative;
+            left: 0;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 0.9em;
+            width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .source:hover .source-context {
+            display: block;
+        }
+
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="pdf-controls">
+            <select id="pdfSelect">
+                <option value="">No PDF selected</option>
+            </select>
+            <button onclick="showUploadModal()">Upload New PDF</button>
+        </div>
+    </div>
+
+    <div class="upload-modal" id="uploadModal">
+        <div class="upload-content">
+            <h2>Upload PDF</h2>
+            <p>Drag & drop a PDF file here or click to select</p>
+            <input type="file" id="fileInput" accept=".pdf" style="display: none">
+            <button onclick="document.getElementById('fileInput').click()">Select File</button>
+            <div class="spinner" id="uploadSpinner"></div>
+            <div id="uploadStatus" class="status"></div>
+            <button onclick="closeUploadModal()">Close</button>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="typing-indicator">AI is processing your question...</div>
+    </div>
+
+    <div class="input-container" id="inputContainer">
+        <input type="text" id="userInput" placeholder="Ask a question...">
+        <button onclick="sendMessage()" id="sendButton">Ask</button>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:9000';
+        let currentPdfId = null;
+
+        class MessageManager {
+            constructor() {
+                this.currentMessageDiv = null;
+                this.currentMessageContent = '';
+                this.chatContainer = document.getElementById('chatContainer');
+            }
+
+            createMessage(isUser, content = '', sources = null, context = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = content;
+                messageDiv.appendChild(contentDiv);
+
+                if (sources && sources.length > 0) {
+                    const sourceDiv = document.createElement('div');
+                    sourceDiv.className = 'source';
+                    
+                    const chunksSpan = document.createElement('span');
+                    chunksSpan.className = 'source-chunks';
+                    chunksSpan.textContent = `Source: Chunk ${sources.map(s => s.chunk_id).join(', ')}`;
+                    sourceDiv.appendChild(chunksSpan);
+
+                    if (context) {
+                        const contextDiv = document.createElement('div');
+                        contextDiv.className = 'source-context';
+                        contextDiv.textContent = context;
+                        sourceDiv.appendChild(contextDiv);
+                    }
+
+                    messageDiv.appendChild(sourceDiv);
+                }
+
+                this.chatContainer.insertBefore(
+                    messageDiv, 
+                    document.querySelector('.typing-indicator')
+                );
+                this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+                return messageDiv;
+            }
+
+            updateAssistantMessage(content) {
+                if (!this.currentMessageDiv) {
+                    this.currentMessageDiv = this.createMessage(false);
+                }
+                
+                // If this is the first content and it's just whitespace, ignore it
+                if (!this.currentMessageContent && content.trim() === '') {
+                    return;
+                }
+                
+                this.currentMessageContent += content;
+                const contentDiv = this.currentMessageDiv.querySelector('.message-content');
+                
+                // Remove leading whitespace only at the start of the message
+                let displayContent = this.currentMessageContent;
+                if (displayContent.length === content.length) {
+                    displayContent = displayContent.trimStart();
+                }
+                
+                contentDiv.textContent = displayContent;
+                this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+            }
+            
+            // Add new method to handle end of stream
+            finalizeAssistantMessage() {
+                if (this.currentMessageDiv) {
+                    const contentDiv = this.currentMessageDiv.querySelector('.message-content');
+                    contentDiv.textContent = this.currentMessageContent.trim();
+                    this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+                }
+            }
+
+            startNewAssistantMessage(sources = null, context = null) {
+                this.currentMessageDiv = this.createMessage(false, '', sources, context);
+                this.currentMessageContent = '';
+            }
+
+            addUserMessage(content) {
+                this.createMessage(true, content);
+            }
+
+            reset() {
+                this.currentMessageDiv = null;
+                this.currentMessageContent = '';
+            }
+        }
+
+        const messageManager = new MessageManager();
+
+        async function loadPDFs() {
+            try {
+                const response = await fetch(`${API_URL}/pdfs`);
+                if (!response.ok) throw new Error('Failed to fetch PDFs');
+                
+                const data = await response.json();
+                const select = document.getElementById('pdfSelect');
+                
+                data.pdfs.forEach(pdf => {
+                    const option = document.createElement('option');
+                    option.value = pdf.id;
+                    option.textContent = pdf.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading PDFs:', error);
+                showStatus(`Error loading PDFs: ${error.message}`, 'error');
+            }
+        }
+
+        document.getElementById('pdfSelect').addEventListener('change', (e) => {
+            currentPdfId = e.target.value;
+            document.getElementById('userInput').placeholder = 
+                currentPdfId ? "Ask a question about your PDF..." : "Ask a general question...";
+        });
+
+        function showUploadModal() {
+            document.getElementById('uploadModal').style.display = 'flex';
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').style.display = 'none';
+        }
+
+        const uploadModal = document.getElementById('uploadModal');
+        const fileInput = document.getElementById('fileInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const uploadSpinner = document.getElementById('uploadSpinner');
+
+        uploadModal.addEventListener('click', (e) => {
+            if (e.target === uploadModal) closeUploadModal();
+        });
+
+        uploadModal.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        uploadModal.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                handleFileUpload(file);
+            } else {
+                showStatus('Please upload a PDF file', 'error');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileUpload(file);
+            }
+        });
+
+        function showStatus(message, type) {
+            uploadStatus.textContent = message;
+            uploadStatus.className = `status ${type}`;
+            uploadStatus.style.display = 'block';
+            setTimeout(() => {
+                uploadStatus.style.display = 'none';
+            }, 5000);
+        }
+
+        async function handleFileUpload(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            uploadSpinner.style.display = 'block';
+            
+            try {
+                const response = await fetch(`${API_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Upload failed: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                showStatus('PDF uploaded successfully!', 'success');
+                
+                const select = document.getElementById('pdfSelect');
+                const option = document.createElement('option');
+                option.value = result.pdf_id;
+                option.textContent = result.pdf_id;
+                select.appendChild(option);
+                select.value = result.pdf_id;
+                currentPdfId = result.pdf_id;
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                uploadSpinner.style.display = 'none';
+            }
+        }
+
+        async function processStreamChunk(chunk) {
+            const lines = chunk.split('\n').filter(line => line.trim());
+            
+            for (const line of lines) {
+                try {
+                    const data = JSON.parse(line);
+                    
+                    switch (data.type) {
+                        case 'metadata':
+                            messageManager.startNewAssistantMessage(data.sources, data.context);
+                            break;
+                        case 'chunk':
+                            messageManager.updateAssistantMessage(data.content);
+                            break;
+                        case 'error':
+                            throw new Error(data.content);
+                        default:
+                            console.warn(`Unknown chunk type: ${data.type}`);
+                    }
+                } catch (e) {
+                    console.error('Error processing chunk:', e);
+                    showStatus(`Error: ${e.message}`, 'error');
+                }
+            }
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const content = userInput.value.trim();
+            if (!content) return;
+
+            const sendButton = document.getElementById('sendButton');
+            const typingIndicator = document.querySelector('.typing-indicator');
+            
+            userInput.value = '';
+            userInput.disabled = true;
+            sendButton.disabled = true;
+            
+            messageManager.addUserMessage(content);
+            typingIndicator.style.display = 'block';
+            messageManager.reset();
+
+            try {
+                const requestBody = {
+                    question: content,
+                    chat_history: []
+                };
+
+                if (currentPdfId) {
+                    requestBody.pdf_id = currentPdfId;
+                }
+
+                const response = await fetch(`${API_URL}/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Request failed: ${response.statusText}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                
+                while (true) {
+                    const {value, done} = await reader.read();
+                    if (done) {
+                        messageManager.finalizeAssistantMessage();
+                        break;
+                    }
+                    
+                    const chunk = decoder.decode(value);
+                    await processStreamChunk(chunk);
+                }
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                typingIndicator.style.display = 'none';
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        document.getElementById('userInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        loadPDFs();
+    </script>
+</body>
+</html>

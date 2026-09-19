@@ -10,6 +10,7 @@
 - bash scripts
     - setup scripts
 - Pi-hole setup
+- n8n projects
 
 *More Projects Incoming...*
 

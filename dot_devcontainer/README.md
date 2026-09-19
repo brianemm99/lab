@@ -18,8 +18,9 @@
 - tmux/herdr
 - bat
 - chezmoi
+- mise
 
-## lab/dot_devcontainer/aicourse
+## lab/dot_devcontainer/dind
 
 - docker-in-docker devcontainer
     - pi  & hermes coding agent testing
